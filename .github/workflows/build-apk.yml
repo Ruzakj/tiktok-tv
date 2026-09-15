@@ -3,12 +3,13 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -17,11 +18,13 @@ jobs:
           wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip
           unzip -q gradle-8.7-bin.zip
           echo "$PWD/gradle-8.7/bin" >> $GITHUB_PATH
-      - name: Build release APK
-        run: gradle :app:assembleRelease --no-daemon
-      - name: Upload APK
+      - name: Build signed APK
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Prepare install APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk TikTok-TV-Lite-signed.apk
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: tiktok-tv-lite-release
-          path: app/build/outputs/apk/release/*.apk
+          name: tiktok-tv-lite-signed-installable
+          path: TikTok-TV-Lite-signed.apk
           if-no-files-found: error
