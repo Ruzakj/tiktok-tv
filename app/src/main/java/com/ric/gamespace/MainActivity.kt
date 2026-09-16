@@ -3,7 +3,6 @@ package com.ric.gamespace
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
@@ -12,15 +11,19 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.ric.gamespace.adb.AdbEngine
 
 class MainActivity : AppCompatActivity() {
     private lateinit var list: LinearLayout
+    private lateinit var adbStatus: TextView
+    private lateinit var adbEngine: AdbEngine
     private val bg = Color.rgb(9, 11, 16)
     private val card = Color.rgb(20, 23, 31)
     private val red = Color.rgb(255, 51, 79)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        adbEngine = AdbEngine(this)
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(32, 28, 32, 24)
@@ -33,7 +36,7 @@ class MainActivity : AppCompatActivity() {
             setTypeface(typeface, 1)
         })
         root.addView(TextView(this).apply {
-            text = "iQOO Z9x • Non-root performance launcher"
+            text = "iQOO Z9x • Embedded ADB gaming launcher"
             textSize = 13f
             setTextColor(Color.LTGRAY)
             setPadding(0, 5, 0, 20)
@@ -44,10 +47,12 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.HORIZONTAL
             setPadding(0, 18, 0, 12)
         }
-        row.addView(button("WIRELESS ADB") {
-            startActivity(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS))
+        row.addView(button("ADB SETUP") {
+            startActivity(adbEngine.wirelessDebuggingSettingsIntent())
         }, LinearLayout.LayoutParams(0, 56.dp, 1f).apply { marginEnd = 8.dp })
-        row.addView(button("REFRESH") { loadGames() }, LinearLayout.LayoutParams(0, 56.dp, 1f).apply { marginStart = 8.dp })
+        row.addView(button("REFRESH") {
+            updateAdbStatus(); loadGames()
+        }, LinearLayout.LayoutParams(0, 56.dp, 1f).apply { marginStart = 8.dp })
         root.addView(row)
 
         root.addView(TextView(this).apply {
@@ -59,7 +64,13 @@ class MainActivity : AppCompatActivity() {
         list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(ScrollView(this).apply { addView(list) }, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root)
+        updateAdbStatus()
         loadGames()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::adbEngine.isInitialized && ::adbStatus.isInitialized) updateAdbStatus()
     }
 
     private fun statusCard(): View = LinearLayout(this).apply {
@@ -72,12 +83,21 @@ class MainActivity : AppCompatActivity() {
             setTextColor(red)
             setTypeface(typeface, 1)
         })
-        addView(TextView(this@MainActivity).apply {
-            text = "ADB Engine: setup required\nEnable Wireless debugging, then return here."
+        adbStatus = TextView(this@MainActivity).apply {
             textSize = 14f
             setTextColor(Color.WHITE)
             setPadding(0, 8, 0, 0)
-        })
+        }
+        addView(adbStatus)
+    }
+
+    private fun updateAdbStatus() {
+        adbStatus.text = when (adbEngine.state()) {
+            AdbEngine.State.UNSUPPORTED -> "ADB Engine: UNSUPPORTED\nAndroid 11+ required for Wireless Debugging."
+            AdbEngine.State.WIRELESS_DEBUGGING_OFF -> "ADB Engine: SETUP REQUIRED\nEnable Wireless debugging."
+            AdbEngine.State.READY_FOR_PAIRING -> "ADB Engine: READY TO PAIR\n${adbEngine.pairingInstructions()}"
+            AdbEngine.State.CONNECTED -> "ADB Engine: CONNECTED\nShell transport ready."
+        }
     }
 
     private fun loadGames() {
@@ -113,9 +133,7 @@ class MainActivity : AppCompatActivity() {
         if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
-        } else {
-            Toast.makeText(this, "Game cannot be launched", Toast.LENGTH_SHORT).show()
-        }
+        } else Toast.makeText(this, "Game cannot be launched", Toast.LENGTH_SHORT).show()
     }
 
     private fun button(label: String, action: () -> Unit) = Button(this).apply {
@@ -125,6 +143,5 @@ class MainActivity : AppCompatActivity() {
         setOnClickListener { action() }
     }
 
-    private val Int.dp: Int
-        get() = (this * resources.displayMetrics.density).toInt()
+    private val Int.dp: Int get() = (this * resources.displayMetrics.density).toInt()
 }
