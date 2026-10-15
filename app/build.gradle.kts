@@ -4,15 +4,15 @@ plugins {
 }
 
 android {
-    namespace = "com.ric.gamespace"
+    namespace = "com.ric.tiktoktv"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.ric.gamespace"
-        minSdk = 30
+        applicationId = "com.ric.tiktoktv"
+        minSdk = 23
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0"
     }
 
     compileOptions {
@@ -23,6 +23,7 @@ android {
     kotlinOptions { jvmTarget = "17" }
 
     buildTypes {
+        debug { }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -33,8 +34,4 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("com.github.MuntashirAkon:libadb-android:3.1.1")
-    implementation("com.github.MuntashirAkon:sun-security-android:1.1")
-    implementation("org.conscrypt:conscrypt-android:2.5.3")
 }
